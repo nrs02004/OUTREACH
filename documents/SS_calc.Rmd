@@ -1,0 +1,89 @@
+---
+title: "First pass at sample size simulations"
+output: 
+  pdf_document:
+    extra_dependencies: ["multirow"]
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+sim.output <- read.csv("../saved_files/simulation_outcomes.csv")
+sim.params <- read.csv("../saved_files/simulation_params.csv")
+library(dplyr)
+library(ggplot2)
+```
+
+## Sample Size Simulations
+
+Throughout this section we use "FEV" to mean percentage of predicted FEV$_1$. We use the following models to generate (and fit) data:  
+\[
+FEV_{t, i, clinic} = (\beta_{0,clinic} + \beta_{0,i,clinic}) + t*(\delta_{clinic} + \gamma_{i,clinic}) + \epsilon_{t,i,clinic}
+\]
+\[
+FEV_{t, i, home} = (\beta_{0,home} + \beta_{0,i,home}) + t*(\delta_{home} + \gamma_{i,home}) + \epsilon_{t,i,home}
+\]
+
+Here t is on the scale of years (our followup is at $t=0.25$, or 3 months). $\delta_{clinic}$ and $\delta_{home}$ are the average change in FEV parameters for clinic vs home spirometry (from baseline to the final followup). $\gamma_{i,clinic}$ and $\gamma_{i,home}$ are random patient specific average FEV changes (from baseline to final followup). $\beta_{0,clinic}$, and $\beta_{0,home}$ are average baseline FEV values. Finally $\beta_{0,i,clinic}$ and $\beta_{0,i,home}$ are random person-specific baseline FEV differences from the overall average baseline FEV. We will also let $N_{obs,clinic}$ denote the number of FEV measurements per person taken in clinic, and $N_{obs,home}$ is the number taken at home per person (we assume these are equally spaced in time).
+
+In all simulations, I used
+\begin{align*}
+\delta_{clinic} &= \delta_{home} = 0\\
+\beta_{0,clinic} &= \beta_{0,home} = 80\\
+\beta_{0,i,clinic} &\sim N(0,20^2)\\
+\beta_{0,i,home} &\sim N(0,20^2)\\
+N_{obs,clinic} &= 3
+\end{align*}
+
+I allowed the number of home observations ($N_{obs,home}$), the number of people enrolled ($N$), and the correlation between random effects ($\operatorname{cor}(\delta_{i,clinic},\delta_{i,home})$, $\operatorname{cor}(\beta_{0,i,clinic},\beta_{0,i,home})$) to vary in the simulations. In particular I tried all combinations of
+\begin{align*}
+N_{obs,home} &\in \{6,12,24\}\\
+N &\in \{50, 75, 100, 125, 150\}\\
+\rho \equiv \operatorname{cor}(\delta_{i,clinic},\delta_{i,home}) = \operatorname{cor}(\beta_{0,i,clinic},\beta_{0,i,home}) &\in \{0, 0.4, 0.8\}
+\end{align*}
+Note. one could have varied those correlations independently, but to minimize the number of different settings I had them vary together.
+
+In addition I varied some of the random effects/error variance parameters (for home spirometry) across 3 different settings (Optimistic, Neutral, and Pessimistic). The 'optimism' of the 3 settings is based on how much increased variability there is from clinic to home spirometry.
+\begin{center}
+\begin{tabular}{ c c c c }
+ Parameter & Optimistic & Neutral & Pessimistic \\
+ \hline
+ $\operatorname{sd}(\epsilon_{t,i,clinic})$ & 2.6 & 2.6 & 2.6 \\
+ $\operatorname{sd}(\delta_{t,i,clinic})$ & 2.6 & 2.6 & 2.6 \\
+ $\operatorname{sd}(\epsilon_{t,i,home})$ & 3 & 3.7 & 5.2 \\ 
+ 
+ $\operatorname{sd}(\delta_{t,i,home})$ & 3 & 3.7 & 5.2  
+\end{tabular}
+\end{center}
+
+Changing these scenarios, as well as $N_{obs,home}$ result in $3*3=9$ different ``true'' parameter-values for var-ratio $= \frac{\operatorname{var}(\hat{\delta}_{home})}{\operatorname{var}(\hat{\delta}_{clinic})}$. Note. changing the values of $\rho$ and $N$ should not change the parameter values (at least for $N$ sufficiently large). Here var-ratio basically gives us the ratio of per-person efficiency between a trial run with home spirometry vs a trial run with office spirometry (to get trials of equal power, with p-values based on gaussian approximations, this is the ratio of sample sizes one would need). This is one of the parameter values we are trying to estimate in our trial. The other parameter we are trying to estimate is bias $=\delta_{home} - \delta_{clinic}$ which is $0$ in all simulation settings. I next give a plot of the "true" (or population) var-ratio parameter values in the various settings: The x-axis varies the number of home measurements; the 3 lines per plot vary the scenario.
+
+```{r echo = FALSE}
+### This should be invariant to the correlation (though there is some sampling error -- might want to average over the correlations, or increase the number of samples so that the sampling error is minimal!)
+sim.params %>% filter(cors == 0.4) %>% ggplot(aes(x = n_home_obs, y = true_ratio, color = scenarios)) +
+  geom_line() + 
+  xlab("Number of home measurements") + ylab("True var-ratio")
+
+```
+
+
+I now ran simulations to evaluate the width of 95\% confidence intervals for estimating those 2 parameters. I simulated trials varying the number of people enrolled, number of home measurements per person, correlation between home and clinic spirometry, and variability of spirometry measurements. Confidence intervals were calculated via a cluster non-parametric bootstrap, where parameters were estimated using a mixed-effects model. I now report the average width from those simulations in each setting. I first give plots for estimating the bias parameter; then for the ratio parameter.
+
+In each of these figures, the x-axis is the number of people enrolled. The 3 lines per plot correspond to the 3 different scenarios (optimistic, neutral, pessimistic); the super-x-axis corresponds to the correlation between clinic and home measurements ($\rho \in \{0,0.4,0.8\}$); the super-y-axis corresponds to the number of home measurements per person (6, 12, or 24). 
+
+```{r echo = FALSE}
+sim.output %>% ggplot(aes(x = n_ppl, y = diff_mean_width, color = scenarios)) +
+  geom_line() + 
+  facet_grid(n_home_obs ~ cors) +
+  xlab("Number of people") + ylab("CI width for estimated Bias")
+
+```
+
+Now for the var-ratio
+
+```{r echo = FALSE}
+sim.output %>% ggplot(aes(x = n_ppl, y = ratio_var_width, color = scenarios)) +
+  geom_line() + 
+  facet_grid(n_home_obs ~ cors) +
+  xlab("Number of people") + ylab("CI width for estimated var-ratio")
+
+```
