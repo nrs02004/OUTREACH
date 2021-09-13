@@ -143,7 +143,8 @@ run_many <- function(data_gen_params,
                               data_gen_params$delta_sd_home,
                               data_gen_params$delta_cor,
                               data_gen_params$residual_sd_clinic,
-                              data_gen_params$residual_sd_home)
+                              data_gen_params$residual_sd_home,
+                              data_gen_params$followup_time)
   runs <- replicate(ntrial, run_one(gen_dat, n_people, nboot, alpha, only_2_clinic_measurements))
   return(list(runs = runs,
               mean_diff_width = mean(unlist(runs[3,])),
