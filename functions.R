@@ -305,7 +305,8 @@ calc_ratio <- function(data_gen_params, n_people, ntimes = 1e3, only_2_clinic_me
                               data_gen_params$delta_sd_home,
                               data_gen_params$delta_cor,
                               data_gen_params$residual_sd_clinic,
-                              data_gen_params$residual_sd_home)
+                              data_gen_params$residual_sd_home,
+                              data_gen_params$followup_time)
   calcs <- replicate(ntimes, do_one_calc_ests(n_people, gen_dat, only_2_clinic_measurements))
   ests.home <- unlist(calcs[1,])
   ests.office <- unlist(calcs[2,])

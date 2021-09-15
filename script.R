@@ -59,7 +59,7 @@ for(i in 1:length(scenarios)){
   }
 }
 
-
+set.seed(2)
 ## Here we calculate/approximate the true population ratio of variances in each of our settings
 ## As a reminder, the true population bias is 0 in our simulation settings
 true_ratio <- array(dim=c(length(scenarios), 
@@ -71,6 +71,7 @@ for(i in 1:length(scenarios)){
       params <- scenarios[[i]]
       params$beta_0_cor = cors[k]; params$delta_cor = cors[k]
       params$n_obs_per_person_home = n_home_obs_per_person[j]
+      params$followup_time = followup_time
       true_ratio[i,j,k] <- calc_ratio(data_gen_params=params, 
                                   n_people=150, 
                                   ntimes = 3e3,  
