@@ -39,15 +39,15 @@ sim.output.update <- sim.output %>%
 ###### In the absence of that I am going to interpolate the variance of our estimate between optimistic and neutral
 
 ratio_use <- sim.output.update %>% filter(n_ppl == 100, cors == 0.4, n_home_obs == 12) %>% pull(true_ratio)
-thresh.use <- sim.output.update %>% filter(n_ppl == 100, cors == 0.4, n_home_obs == 12) %>% select(pow0.8_ratio_delta, pow0.9_ratio_delta, pow0.95_ratio_delta)
-prop.through <- (1-ratio_use[1])/(ratio_use[2] - ratio_use[1])
-thresh.interp <- (thresh.use[2,] - thresh.use[1,])*prop.through + thresh.use[1,]
-thresh.interp
+thresh.use <- sim.output.update %>% filter(n_ppl == 100, cors == 0.4, n_home_obs == 12) %>% dplyr::select(pow0.8_ratio_delta, pow0.9_ratio_delta, pow0.95_ratio_delta)
+prop.through <- (1-ratio_use[2])/(ratio_use[3] - ratio_use[2])
+thresh.interp <- (thresh.use[3,] - thresh.use[2,])*prop.through + thresh.use[2,]
+thresh.interp + 1
 
 ### Doing the same thing with Bias (not strictly necessary, but it seems like we should probably be thinking about engaging with the same simulation scenario for both)
 
 ratio_use <- sim.output.update %>% filter(n_ppl == 100, cors == 0.4, n_home_obs == 12) %>% pull(true_ratio)
-thresh.use <- sim.output.update %>% filter(n_ppl == 100, cors == 0.4, n_home_obs == 12) %>% select(pow0.8_bias_delta, pow0.9_bias_delta, pow0.95_bias_delta)
-prop.through <- (1-ratio_use[1])/(ratio_use[2] - ratio_use[1])
-thresh.interp <- (thresh.use[2,] - thresh.use[1,])*prop.through + thresh.use[1,]
-thresh.interp + 1
+thresh.use <- sim.output.update %>% filter(n_ppl == 100, cors == 0.4, n_home_obs == 12) %>% dplyr::select(pow0.8_bias_delta, pow0.9_bias_delta, pow0.95_bias_delta)
+prop.through <- (1-ratio_use[2])/(ratio_use[3] - ratio_use[2])
+thresh.interp <- (thresh.use[3,] - thresh.use[2,])*prop.through + thresh.use[2,]
+thresh.interp
